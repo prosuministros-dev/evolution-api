@@ -6,6 +6,15 @@ if [ "$DOCKER_ENV" != "true" ]; then
     export_env_vars
 fi
 
+# When DATABASE_URL is provided via runtime environment (e.g. Render, Railway, Fly.io),
+# ensure it takes precedence over the baked-in .env file so Prisma uses the correct host.
+if [ -n "$DATABASE_URL" ]; then
+    touch .env
+    sed -i '/^DATABASE_URL=/d' .env
+    printf 'DATABASE_URL=%s\n' "$DATABASE_URL" >> .env
+    echo "DATABASE_URL injected from runtime environment"
+fi
+
 if [[ "$DATABASE_PROVIDER" == "postgresql" || "$DATABASE_PROVIDER" == "mysql" || "$DATABASE_PROVIDER" == "psql_bouncer" ]]; then
     export DATABASE_URL
     echo "Deploying migrations for $DATABASE_PROVIDER"
